@@ -11,11 +11,21 @@ import org.w3c.dom.Element;
 
 @RestController
 public class CurrencyController {
+    private final com.fasterxml.jackson.databind.ObjectMapper mapper;
+    public CurrencyController(com.fasterxml.jackson.databind.ObjectMapper mapper) { this.mapper = mapper; }
     private Map<String,Object> saved;
     private Instant attempted = Instant.EPOCH;
     @GetMapping("/api/currencies") public synchronized Map<String,Object> rates() {
-        if (attempted.isAfter(Instant.now().minusSeconds(3600))) return saved == null ? unavailable() : saved;
+        long retrySeconds = saved != null && Boolean.FALSE.equals(saved.get("stale")) ? 3600 : 60;
+        if (attempted.isAfter(Instant.now().minusSeconds(retrySeconds))) return saved == null ? unavailable() : saved;
         attempted = Instant.now();
+        try {
+            var response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build().send(
+                HttpRequest.newBuilder(URI.create("https://open.er-api.com/v6/latest/USD")).timeout(Duration.ofSeconds(6)).GET().build(), HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) throw new IllegalStateException("Exchange rates unavailable");
+            saved = parseRates(mapper.readTree(response.body()), Instant.now());
+            return saved;
+        } catch (Exception error) { /* Try the independent CBR source below. */ }
         try {
             var response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build().send(
                 HttpRequest.newBuilder(URI.create("https://www.cbr.ru/scripts/XML_daily.asp")).timeout(Duration.ofSeconds(10)).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
@@ -44,6 +54,21 @@ public class CurrencyController {
             if (saved != null) { var stale = new HashMap<>(saved); stale.put("stale", true); saved = stale; }
         }
         return saved == null ? unavailable() : saved;
+    }
+    static Map<String,Object> parseRates(com.fasterxml.jackson.databind.JsonNode json, Instant now) {
+        if (!"success".equals(json.path("result").asText()) || !"USD".equals(json.path("base_code").asText()))
+            throw new IllegalArgumentException("Invalid exchange-rate response");
+        Instant published = Instant.ofEpochSecond(json.path("time_last_update_unix").asLong());
+        if (published.isBefore(now.minus(Duration.ofDays(7))) || published.isAfter(now.plusSeconds(3600)))
+            throw new IllegalArgumentException("Invalid exchange-rate date");
+        Map<String,BigDecimal> rates = new HashMap<>();
+        rates.put("USD", BigDecimal.ONE);
+        for (String code : List.of("RUB", "KZT")) {
+            var value = json.path("rates").path(code);
+            if (!value.isNumber() || value.decimalValue().signum() <= 0) throw new IllegalArgumentException("Missing exchange rate");
+            rates.put(code, value.decimalValue());
+        }
+        return Map.of("rates", rates, "date", published.atOffset(ZoneOffset.UTC).toLocalDate().toString(), "stale", false, "source", "ExchangeRate-API");
     }
     private Map<String,Object> unavailable() { return Map.of("rates", Map.of("USD", 1), "date", "", "stale", true, "source", "Central Bank of Russia"); }
 }

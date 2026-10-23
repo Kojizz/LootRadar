@@ -9,7 +9,7 @@ A PC game deal tracker for Steam, Epic Games, GOG, and Microsoft / Xbox PC. Comp
 - Game details with store comparisons and links to available offers.
 - Guest wishlists and account wishlists with Google or Steam sign-in; optional import of your browser's saved games.
 - Top sales ranked by discount and a separate Steam upcoming-games view, also available within wishlists.
-- USD prices with approximate RUB and KZT display using Central Bank of Russia exchange rates.
+- USD prices with approximate RUB and KZT display using ExchangeRate-API, with Central Bank of Russia as a fallback.
 - Price history collected by the application, plus CheapShark historical lows.
 - Responsive interface with the custom LootRadar logo and store brand icons.
 
@@ -142,6 +142,6 @@ Charts grow from prices observed while the server runs. Existing provider histor
 
 ## Credits
 
-Price data and store redirects: [CheapShark](https://www.cheapshark.com/), [Microsoft PC deals](https://www.microsoft.com/en-us/store/deals/games/pc), and [Steam](https://store.steampowered.com/). Currency conversions: [Central Bank of Russia](https://www.cbr.ru/).
+Price data and store redirects: [CheapShark](https://www.cheapshark.com/), [Microsoft PC deals](https://www.microsoft.com/en-us/store/deals/games/pc), and [Steam](https://store.steampowered.com/). Currency conversions: [ExchangeRate-API](https://www.exchangerate-api.com/) and [Central Bank of Russia](https://www.cbr.ru/).
 
 Steam, Epic Games, and GOG SVGs: [Simple Icons 16.0.0](https://github.com/simple-icons/simple-icons/tree/16.0.0/icons); Microsoft SVG: Simple Icons 11.0.0. Icons are distributed under CC0-1.0. Brand marks belong to their respective owners. The LootRadar logo was supplied for this project.

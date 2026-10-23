@@ -19,6 +19,16 @@ test.beforeEach(async ({page}) => {
   await page.goto('/');
 });
 
+test('converts card prices to RUB and KZT and remembers the selection', async ({page}) => {
+  const currency = page.getByRole('combobox', {name:'Display currency'});
+  await currency.selectOption('RUB');
+  await expect(page.getByTestId('game-card').locator('.card-price strong')).toContainText('400.00');
+  await currency.selectOption('KZT');
+  await expect(page.getByTestId('game-card').locator('.card-price strong')).toContainText('2,500.00');
+  await page.reload();
+  await expect(currency).toHaveValue('KZT');
+});
+
 test('search and category filters show useful empty states', async ({page}) => {
   await page.getByRole('searchbox', {name: 'Search games'}).fill('unknown game');
   await expect(page.getByRole('heading', {name: 'No games on this frequency.'})).toBeVisible();
