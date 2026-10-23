@@ -1,0 +1,16 @@
+node_modules/
+dist/
+target/
+.env
+!.env.example
+data/
+*.log
+*.pid
+.DS_Store
+.idea/
+.vscode/
+backend-starter.zip
+playwright-report/
+test-results/
+*.tsbuildinfo
+artifacts/
