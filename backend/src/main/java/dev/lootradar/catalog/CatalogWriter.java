@@ -25,7 +25,7 @@ public class CatalogWriter {
         offers.findByStoreId(storeId).forEach(offer -> { offer.active = false; offers.save(offer); });
         for (JsonNode row : rows) {
             String id = row.path("gameID").asText();
-            if (!id.matches("[0-9]{1,32}") || !storeId.equals(row.path("storeID").asText()))
+            if (!(id.matches("[0-9]{1,32}") || (storeId.equals("ms") && id.matches("ms-[a-z0-9]{12}"))) || !storeId.equals(row.path("storeID").asText()))
                 throw new IllegalArgumentException("Invalid game or store ID");
             Game game = games.findById(id).orElseGet(Game::new);
             game.id = id;
@@ -50,6 +50,18 @@ public class CatalogWriter {
         for (JsonNode row : rows) {
             String storeId = row.path("storeID").asText();
             if (ApiModels.STORES.containsKey(storeId)) saveOffer(gameId, storeId, row, "price", "retailPrice", now);
+        }
+    }
+
+    @Transactional
+    public void importUpcoming(JsonNode rows) {
+        for (JsonNode row : rows) {
+            String id = row.path("id").asText();
+            if (!id.matches("steam-[0-9]+") || row.path("title").asText().isBlank()) throw new IllegalArgumentException();
+            Game game = games.findById(id).orElseGet(Game::new);
+            game.id = id; game.title = row.path("title").asText(); game.steamAppId = row.path("steamAppId").asText();
+            game.thumbnail = row.path("image").asText(); game.upcoming = true; game.releaseDate = row.path("releaseDate").asText("To be announced");
+            games.save(game);
         }
     }
 

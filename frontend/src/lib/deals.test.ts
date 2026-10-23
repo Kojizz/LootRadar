@@ -4,6 +4,17 @@ import type { Game, Offer } from './types';
 const offer = (storeId: string, price: number, discount = 50): Offer => ({storeId, price, discount, storeName: storeId, regularPrice: 40, dealRating: 9, url: '', checkedAt: ''});
 const game = (id: string, offers: Offer[]): Game => ({id, title: 'Adventure ' + id, steamAppId: '', image: '', reviewCount: 100, reviewPercent: 90, reviewText: '', offers});
 describe('deal discovery', () => {
+  it('shows upcoming Steam games without treating them as free offers', () => {
+    const upcoming = {...game('steam-42', []), upcoming: true, releaseDate: 'Coming soon'};
+    expect(filterGames([upcoming], {...DEFAULT_FILTERS, tab: 'upcoming'})).toHaveLength(1);
+    expect(filterGames([upcoming], {...DEFAULT_FILTERS, tab: 'free'})).toEqual([]);
+    expect(filterGames([upcoming], {...DEFAULT_FILTERS, tab: 'upcoming', stores: ['ms']})).toEqual([]);
+  });
+  it('includes Microsoft PC offers and ranks top sales by discount', () => {
+    const games = [game('ms-test', [offer('ms', 20, 50)]), game('1', [offer('1', 10, 80)])];
+    expect(filterGames(games, {...DEFAULT_FILTERS, stores: ['ms']})).toHaveLength(1);
+    expect(filterGames(games, {...DEFAULT_FILTERS, tab: 'sales'}).map(g => g.id)).toEqual(['1', 'ms-test']);
+  });
   it('uses the selected store price when applying a budget', () => {
     const games = [game('1', [offer('25', 2), offer('1', 20)])];
     expect(filterGames(games, {...DEFAULT_FILTERS, stores: ['1'], maxPrice: 10})).toEqual([]);

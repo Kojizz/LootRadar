@@ -29,15 +29,18 @@ public class CatalogService {
     private final CatalogWriter writer;
     private final CheapSharkClient provider;
     private final boolean syncEnabled;
+    private final ExternalCatalogClient external;
+    private final boolean extraSyncEnabled;
     private final AtomicBoolean syncing = new AtomicBoolean();
     private record CachedLow(Instant fetchedAt, HistoricLow low) {}
     private final Map<String, CachedLow> comparisons = new ConcurrentHashMap<>();
 
     public CatalogService(GameRepository games, OfferRepository offers, ObservationRepository observations,
             SyncStateRepository states, CatalogWriter writer, CheapSharkClient provider,
-            @Value("${lootradar.sync-enabled:true}") boolean syncEnabled) {
+            @Value("${lootradar.sync-enabled:true}") boolean syncEnabled, ExternalCatalogClient external,
+            @Value("${lootradar.extra-sync-enabled:${lootradar.sync-enabled:true}}") boolean extraSyncEnabled) {
         this.games = games; this.offers = offers; this.observations = observations;
-        this.states = states; this.writer = writer; this.provider = provider; this.syncEnabled = syncEnabled;
+        this.states = states; this.writer = writer; this.provider = provider; this.syncEnabled = syncEnabled; this.external = external; this.extraSyncEnabled = extraSyncEnabled;
     }
 
     @Scheduled(initialDelay = 1500, fixedDelayString = "${lootradar.sync-delay-ms:3600000}")
@@ -53,6 +56,10 @@ public class CatalogService {
                 try { writer.importStore(store, provider.deals(store), Instant.now()); }
                 catch (Exception e) { failed.add(STORES.get(store)); log.warn("Could not refresh {}: {}", STORES.get(store), e.getClass().getSimpleName()); }
             }
+            if (extraSyncEnabled) {
+                try { writer.importStore("ms", external.microsoft(), Instant.now()); } catch (Exception e) { failed.add("Microsoft / Xbox PC"); }
+                try { writer.importUpcoming(external.upcoming()); } catch (Exception e) { failed.add("Steam upcoming games"); }
+            }
             if (failed.isEmpty()) { state.lastSuccess = Instant.now(); state.lastError = null; }
             else state.lastError = "Refresh unavailable for " + String.join(", ", failed) + ". Showing available saved prices.";
             states.save(state);
@@ -64,12 +71,12 @@ public class CatalogService {
     public Catalog catalog() {
         Map<String, List<Offer>> byGame = offers.findByActiveTrue().stream().collect(Collectors.groupingBy(o -> o.gameId));
         List<GameView> list = games.findAll().stream()
-            .filter(g -> byGame.getOrDefault(g.id, List.of()).stream().anyMatch(o -> o.price.compareTo(o.regularPrice) < 0))
-            .map(g -> view(g, byGame.get(g.id)))
+            .filter(g -> g.upcoming || byGame.getOrDefault(g.id, List.of()).stream().anyMatch(o -> o.price.compareTo(o.regularPrice) < 0))
+            .map(g -> view(g, byGame.getOrDefault(g.id, List.of())))
             .sorted(Comparator.comparing(GameView::title, String.CASE_INSENSITIVE_ORDER)).toList();
         SyncState state = states.findById("catalog").orElseGet(SyncState::new);
         boolean stale = state.lastSuccess == null || state.lastSuccess.isBefore(Instant.now().minus(2, ChronoUnit.HOURS)) || state.lastError != null;
-        return new Catalog(list, List.of(new Store("1", "Steam"), new Store("25", "Epic Games"), new Store("7", "GOG")),
+        return new Catalog(list, List.of(new Store("1", "Steam"), new Store("25", "Epic Games"), new Store("7", "GOG"), new Store("ms", "Microsoft / Xbox PC")),
             new Status(state.lastSuccess, state.lastAttempt, syncing.get(), stale, state.lastError));
     }
 
@@ -82,7 +89,7 @@ public class CatalogService {
         gameView(id); // Reject unknown IDs before contacting the provider.
         boolean fresh = true;
         CachedLow cached = comparisons.get(id);
-        if (cached == null || cached.fetchedAt.isBefore(Instant.now().minus(15, ChronoUnit.MINUTES))) {
+        if (id.matches("[0-9]+") && (cached == null || cached.fetchedAt.isBefore(Instant.now().minus(15, ChronoUnit.MINUTES)))) {
             try {
                 var response = provider.game(id);
                 writer.importComparison(id, response, Instant.now());
@@ -109,11 +116,11 @@ public class CatalogService {
 
     private GameView view(Game game, List<Offer> rows) {
         var views = rows.stream().sorted(Comparator.comparing(o -> o.price)).map(o -> new OfferView(o.storeId,
-            STORES.get(o.storeId), o.price, o.regularPrice, o.discount, o.dealRating, dealUrl(o.dealId), o.checkedAt)).toList();
+            STORES.get(o.storeId), o.price, o.regularPrice, o.discount, o.dealRating, o.storeId.equals("ms") ? "https://www.microsoft.com/store/productId/" + o.dealId : dealUrl(o.dealId), o.checkedAt)).toList();
         String image = game.thumbnail;
         if (image != null && image.contains("steamstatic.com/") && image.contains("capsule_231x87"))
             image = image.replace("capsule_231x87.jpg", "header.jpg");
         return new GameView(game.id, game.title, game.steamAppId, image, game.thumbnail, game.reviewPercent,
-            game.reviewCount, game.reviewText, views);
+            game.reviewCount, game.reviewText, views, game.upcoming, game.releaseDate);
     }
 }

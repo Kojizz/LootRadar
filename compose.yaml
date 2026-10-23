@@ -20,6 +20,10 @@ services:
       DATABASE_URL: jdbc:postgresql://db:5432/lootradar
       DATABASE_USERNAME: lootradar
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-lootradar_local_only}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:${APP_PORT:-8080}}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
     depends_on:
       db:
         condition: service_healthy

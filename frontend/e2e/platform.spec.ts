@@ -14,6 +14,8 @@ test.beforeEach(async ({page}) => {
     const entry = {game, targetPrice: route.request().postDataJSON().targetPrice, createdAt: new Date().toISOString()};
     wishlist = [entry]; return route.fulfill({json: entry});
   });
+  await page.route('**/api/auth/session', route => route.fulfill({json: {authenticated:false, name:'', googleEnabled:false, csrfToken:'test-token', csrfHeader:'X-CSRF-TOKEN'}}));
+  await page.route('**/api/currencies', route => route.fulfill({json: {rates:{USD:1,RUB:80,KZT:500},date:'2026-10-23',stale:false}}));
   await page.goto('/');
 });
 

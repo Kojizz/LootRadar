@@ -12,7 +12,7 @@ class PostgresMigrationTests {
     @Container static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine");
     @Test void schemaMigratesAgainstRealPostgresql() {
         var flyway = Flyway.configure().dataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword()).load();
-        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(1);
+        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(3);
         assertThat(flyway.validateWithResult().validationSuccessful).isTrue();
     }
 }

@@ -1,5 +1,5 @@
 export type Offer = {storeId: string; storeName: string; price: number; regularPrice: number; discount: number; dealRating: number; url: string; checkedAt: string};
-export type Game = {id: string; title: string; steamAppId: string; image: string; thumbnail?: string; reviewPercent: number; reviewCount: number; reviewText: string; offers: Offer[]};
+export type Game = {id: string; title: string; steamAppId: string; image: string; thumbnail?: string; reviewPercent: number; reviewCount: number; reviewText: string; offers: Offer[]; upcoming?: boolean; releaseDate?: string};
 export type Store = {id: string; name: string};
 export type Catalog = {games: Game[]; stores: Store[]; status: {lastSuccess: string | null; lastAttempt: string | null; syncing: boolean; stale: boolean; message: string | null}};
 export type Wish = {game: Game; targetPrice: number | null; createdAt: string};

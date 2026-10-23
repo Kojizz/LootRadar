@@ -97,6 +97,9 @@ class CatalogIntegrationTests {
     @Test void wishlistIsPersistentIsolatedValidatedAndRemovable() {
         String alice = UUID.randomUUID().toString(), bob = UUID.randomUUID().toString();
         var headers = new HttpHeaders(); headers.set("X-Profile-Id", alice); headers.setContentType(MediaType.APPLICATION_JSON);
+        var csrf = http.getForEntity("/api/auth/session", JsonNode.class);
+        headers.set(csrf.getBody().path("csrfHeader").asText(), csrf.getBody().path("csrfToken").asText());
+        headers.set(HttpHeaders.COOKIE, csrf.getHeaders().getFirst(HttpHeaders.SET_COOKIE).split(";")[0]);
         var saved = http.exchange("/api/wishlist/100", HttpMethod.PUT, new HttpEntity<>("{\"targetPrice\":5.50}", headers), JsonNode.class);
         assertThat(saved.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(wishlist.findByProfileIdOrderByCreatedAtDesc(alice)).hasSize(1);

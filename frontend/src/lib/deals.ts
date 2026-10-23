@@ -1,6 +1,6 @@
 import type { Filters, Game } from './types';
 export const money = (value: number) => value === 0 ? 'Free' : new Intl.NumberFormat('en-US', {style: 'currency', currency: 'USD'}).format(value);
-export const DEFAULT_FILTERS: Filters = {query: '', stores: ['1', '25', '7'], maxPrice: 100, tab: 'all', sort: 'best'};
+export const DEFAULT_FILTERS: Filters = {query: '', stores: ['1', '25', '7', 'ms'], maxPrice: 100, tab: 'all', sort: 'best'};
 export function filterGames(games: Game[], filters: Filters): Game[] {
   return games.filter(game => game.title.toLowerCase().includes(filters.query.trim().toLowerCase()))
     .map(game => ({...game, offers: game.offers.filter(offer => filters.stores.includes(offer.storeId)
@@ -9,8 +9,10 @@ export function filterGames(games: Game[], filters: Filters): Game[] {
       && (filters.tab !== 'big' || offer.discount >= 75)
       && (filters.tab !== 'free' || offer.price === 0))
       .sort((a, b) => a.price - b.price)}))
-    .filter(game => game.offers.length > 0)
+    .filter(game => filters.tab === 'upcoming' ? game.upcoming && filters.stores.includes('1') : !game.upcoming && game.offers.length > 0)
     .sort((a, b) => {
+      if (filters.tab === 'upcoming') return a.title.localeCompare(b.title);
+      if (filters.tab === 'sales') return b.offers[0].discount - a.offers[0].discount;
       if (filters.sort === 'price') return a.offers[0].price - b.offers[0].price;
       if (filters.sort === 'discount') return b.offers[0].discount - a.offers[0].discount;
       if (filters.sort === 'rating') return b.reviewPercent - a.reviewPercent || b.reviewCount - a.reviewCount;
