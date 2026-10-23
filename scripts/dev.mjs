@@ -19,25 +19,25 @@ if (await portInUse(5173)) {
   process.exit(1);
 }
 let reuseBackend = false;
-if (await portInUse(8080)) {
+if (await portInUse(8082)) {
   try {
-    const response = await fetch('http://127.0.0.1:8080/api/catalog', {signal: AbortSignal.timeout(5000)});
+    const response = await fetch('http://127.0.0.1:8082/api/catalog', {signal: AbortSignal.timeout(5000)});
     const catalog = await response.json();
     reuseBackend = response.ok && Array.isArray(catalog.games) && typeof catalog.status?.syncing === 'boolean'
       && ['1', '25', '7'].every(id => catalog.stores?.some(store => store.id === id));
   } catch {}
   if (!reuseBackend) {
-    console.error('Port 8080 is occupied, but a ready LootRadar API was not found. Wait for the IntelliJ backend to finish starting, or stop the other service and retry.');
+    console.error('Port 8082 is occupied, but a ready LootRadar API was not found. Wait for the IntelliJ backend to finish starting, or stop the other service and retry.');
     process.exit(1);
   }
-  console.log('Using the LootRadar backend already running on port 8080. It will stay running when this command stops.');
+  console.log('Using the LootRadar backend already running on port 8082. It will stay running when this command stops.');
 }
 const backend = reuseBackend ? null : windows
   ? spawn('cmd.exe', ['/d', '/s', '/c', 'mvnw.cmd spring-boot:run'], {cwd: path.join(root, 'backend'), stdio: 'inherit', windowsHide: true})
   : spawn('sh', ['./mvnw', 'spring-boot:run'], {cwd: path.join(root, 'backend'), stdio: 'inherit'});
 const frontend = spawn(process.execPath, [path.join(root, 'node_modules/vite/bin/vite.js'), '--host', '127.0.0.1'], {cwd: path.join(root, 'frontend'), stdio: 'inherit', windowsHide: true});
 const children = [backend, frontend].filter(Boolean);
-console.log('\nLootRadar: http://127.0.0.1:5173 · API: http://127.0.0.1:8080\n');
+console.log('\nLootRadar: http://127.0.0.1:5173 · API: http://127.0.0.1:8082\n');
 let stopping = false;
 function stop(code = 0) {
   if (stopping) return; stopping = true;

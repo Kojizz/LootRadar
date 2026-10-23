@@ -18,5 +18,6 @@ WORKDIR /app
 RUN groupadd --system lootradar && useradd --system --gid lootradar lootradar
 COPY --from=backend --chown=lootradar:lootradar /build/target/lootradar-0.1.0.jar app.jar
 USER lootradar
+ENV PORT=8080
 EXPOSE 8080
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]

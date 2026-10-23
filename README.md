@@ -52,13 +52,13 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. The API runs on port 8080 and the first catalog import starts shortly after boot. Ctrl+C stops the development processes. Local data is stored in `backend/data/`; it is separate from Docker's PostgreSQL data.
+Open http://127.0.0.1:5173. The API runs on port 8082 and the first catalog import starts shortly after boot. Ctrl+C stops the development processes. Local data is stored in `backend/data/`; it is separate from Docker's PostgreSQL data.
 
 ### IntelliJ IDEA
 
-Open the project folder and import `backend/pom.xml` as a Maven project. Select a JDK 21 or newer. The backend entry point is `dev.lootradar.LootRadarApplication`. Run the frontend separately with `npm run dev:frontend`, or use `npm run dev` from the root. The combined launcher reuses a ready LootRadar backend on port 8080 (including one started from IntelliJ); otherwise it starts both services. Ctrl+C stops only the processes the launcher started.
+Open the project folder and import `backend/pom.xml` as a Maven project. Select a JDK 21 or newer. The backend entry point is `dev.lootradar.LootRadarApplication`. Run the frontend separately with `npm run dev:frontend`, or use `npm run dev` from the root. The combined launcher reuses a ready LootRadar backend on port 8082 (including one started from IntelliJ); otherwise it starts both services. Ctrl+C stops only the processes the launcher started.
 
-If the browser reports `ERR_CONNECTION_REFUSED`, keep the frontend terminal running and open http://127.0.0.1:5173/. If port 8080 belongs to another service or the IntelliJ backend is still starting, the launcher prints an explanation before starting the frontend. If port 5173 is already occupied, use the existing frontend or stop it before starting another.
+If the browser reports `ERR_CONNECTION_REFUSED`, keep the frontend terminal running and open http://127.0.0.1:5173/. If port 8082 belongs to another service or the IntelliJ backend is still starting, the launcher prints an explanation before starting the frontend. If port 5173 is already occupied, use the existing frontend or stop it before starting another.
 
 ## Configuration
 

@@ -1,6 +1,7 @@
 import { useCurrency } from '../lib/currency';
 import { Heart, ArrowUpRight, ThumbsUp, Gamepad2 } from 'lucide-react';
 import type { Game } from '../lib/types';
+import { gameImageSources } from '../lib/gameImages';
 
 import { useState } from 'react';
 const STORE_LOGOS: Record<string, string> = {
@@ -15,10 +16,14 @@ export function StoreIcon({id, small = false}: {id: string; small?: boolean}) {
   </span>;
 }
 export function GameImage({game, className = ''}: {game: Game; className?: string}) {
-  const [failed, setFailed] = useState(false);
-  const [useThumbnail, setUseThumbnail] = useState(false);
-  return failed || !game.image ? <div className={`image-fallback ${className}`}><Gamepad2 size={44}/><span>{game.title}</span></div>
-    : <img className={className} src={useThumbnail ? game.thumbnail : game.image} alt={game.title} loading="lazy" onError={() => {if (!useThumbnail && game.thumbnail && game.thumbnail !== game.image) setUseThumbnail(true); else setFailed(true);}}/>;
+  const sources = gameImageSources(game);
+  // A different game or refreshed artwork must not inherit an earlier failure.
+  return <GameArtwork key={JSON.stringify([game.id, sources])} title={game.title} sources={sources} className={className}/>;
+}
+function GameArtwork({title, sources, className}: {title: string; sources: string[]; className: string}) {
+  const [index, setIndex] = useState(0);
+  return index >= sources.length ? <div className={`image-fallback ${className}`}><Gamepad2 size={44}/><span>{title}</span></div>
+    : <img key={sources[index]} className={className} src={sources[index]} alt={title} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setIndex(value => value + 1)}/>;
 }
 export default function GameCard({game, saved, pending, onOpen, onSave, target}: {game: Game; saved: boolean; pending: boolean; onOpen: () => void; onSave: () => void; target?: number | null}) {
   const {money} = useCurrency();

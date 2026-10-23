@@ -28,6 +28,19 @@ test('search and category filters show useful empty states', async ({page}) => {
   await expect(page.getByTestId('game-card')).toHaveCount(0);
 });
 
+test('top sales recovers artwork after both provider image URLs fail', async ({page}) => {
+  const game = {id:'456', title:'Artwork recovery game', image:'/test-art/header.png', thumbnail:'/test-art/thumbnail.png', steamAppId:'534370', reviewCount:0, reviewPercent:0, offers:[{storeId:'1', storeName:'Steam', price:5, regularPrice:50, discount:90, dealRating:9, url:'https://store.steampowered.com/app/534370/', checkedAt:new Date().toISOString()}]};
+  await page.route('**/api/catalog', route => route.fulfill({json:{games:[game], stores:[{id:'1',name:'Steam'}], status:{lastSuccess:new Date().toISOString(), syncing:false, stale:false}}}));
+  await page.route('**/test-art/*.png', route => route.abort());
+  await page.route('https://cdn.akamai.steamstatic.com/steam/apps/534370/header.jpg', route => route.fulfill({contentType:'image/svg+xml', body:'<svg xmlns="http://www.w3.org/2000/svg" width="460" height="215"><rect width="460" height="215" fill="green"/></svg>'}));
+  await page.reload();
+  await page.getByRole('tab', {name:'Top sales',exact:true}).click();
+  const artwork = page.getByTestId('game-card').getByRole('img', {name:game.title,exact:true});
+  await page.getByTestId('game-card').scrollIntoViewIfNeeded();
+  await expect(artwork).toHaveAttribute('src','https://cdn.akamai.steamstatic.com/steam/apps/534370/header.jpg');
+  await expect.poll(() => artwork.evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+});
+
 test('compare a game and save a persistent target', async ({page}) => {
   await page.getByRole('button', {name: 'Compare prices for Test Adventure', exact: true}).click();
   await expect(page.getByRole('dialog', {name: 'Test Adventure'})).toBeVisible();
