@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: lootradar
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:file:./data/lootradar;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  mvc:
+    problemdetails:
+      enabled: true
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+lootradar:
+  sync-enabled: ${SYNC_ENABLED:true}
+  sync-delay-ms: ${SYNC_DELAY_MS:3600000}
+  provider-url: ${PROVIDER_URL:https://www.cheapshark.com/api/1.0}
