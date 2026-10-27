@@ -45,6 +45,8 @@ Stop with `docker compose down`. This preserves the database volume.
 
 ### AWS EC2 deployment
 
+Live deployment: https://lootradar.3-25-59-149.sslip.io/ (Sydney, `ap-southeast-2`; instance `i-0a6b0389716c1127e`). The public endpoint uses HTTPS and persistent PostgreSQL. Google OAuth's production callback is configured; the Google consent project remains in Testing mode.
+
 `deploy/aws-user-data.sh` bootstraps a fresh Ubuntu 24.04 x86 EC2 instance from the pinned application commit. Use a `t3.small`, 20 GiB encrypted gp3 root disk, Standard CPU credits, and an SSH key stored securely on your computer. Allow inbound TCP 80/443 publicly and TCP 22 only from your IP. Check the account's Free plan and remaining credits before launching: running EC2, storage, and public IPv4 consume credits.
 
 The script installs Docker, builds the application, generates a database password on the server, and starts PostgreSQL plus Caddy. The HTTPS hostname is `lootradar.<public-ip-with-hyphens>.sslip.io`. First boot can take several minutes. Verify `/actuator/health` and the catalog before sharing the URL. Deployment logs are in `/var/log/lootradar-deploy.log`; the installation is in `/opt/lootradar`.
