@@ -45,7 +45,7 @@ Stop with `docker compose down`. This preserves the database volume.
 
 ### AWS EC2 deployment
 
-Live deployment: https://lootradar.3-25-59-149.sslip.io/ (Sydney, `ap-southeast-2`; instance `i-0a6b0389716c1127e`). The public endpoint uses HTTPS and persistent PostgreSQL. Google OAuth's production callback is configured; the Google consent project remains in Testing mode.
+Live deployment: https://lootradar.duckdns.org/ (Sydney, `ap-southeast-2`; instance `i-0a6b0389716c1127e`). The public endpoint uses HTTPS and persistent PostgreSQL. The previous sslip.io address redirects to DuckDNS. Google OAuth's production callback is `https://lootradar.duckdns.org/login/oauth2/code/google`; the Google consent project remains in Testing mode.
 
 `deploy/aws-user-data.sh` bootstraps a fresh Ubuntu 24.04 x86 EC2 instance from the pinned application commit. Use a `t3.small`, 20 GiB encrypted gp3 root disk, Standard CPU credits, and an SSH key stored securely on your computer. Allow inbound TCP 80/443 publicly and TCP 22 only from your IP. Check the account's Free plan and remaining credits before launching: running EC2, storage, and public IPv4 consume credits.
 
@@ -53,7 +53,7 @@ The script installs Docker, builds the application, generates a database passwor
 
 Google login remains disabled until its credentials are added to the server's protected `.env` and the HTTPS callback is registered with Google. Restart with `sudo docker compose -f compose.yaml -f compose.aws.yaml up -d` from `/opt/lootradar` after configuration changes. Never put secrets in EC2 user data or Git.
 
-This is a single-server portfolio deployment. Database and TLS volumes survive container restarts, but are not an off-server backup. Back up PostgreSQL before terminating the instance. A stop/start can change its public IP: update `SITE_HOST`, `APP_BASE_URL`, and the Google callback if that happens. Free-plan access ends when credits or the free period expire; do not upgrade automatically.
+This is a single-server portfolio deployment. Database and TLS volumes survive container restarts, but are not an off-server backup. Back up PostgreSQL before terminating the instance. A stop/start can change its public IP: update the `lootradar` record in DuckDNS to the new AWS public IPv4. The current domain configuration does not install a DuckDNS updater or store the account token on AWS. Keep `SITE_HOST=lootradar.duckdns.org` and `APP_BASE_URL=https://lootradar.duckdns.org` in the server's protected `.env`. Free-plan access ends when credits or the free period expire; do not upgrade automatically.
 
 ## Local development
 
