@@ -43,6 +43,16 @@ docker compose up --build -d
 
 Stop with `docker compose down`. This preserves the database volume.
 
+### AWS EC2 deployment
+
+`deploy/aws-user-data.sh` bootstraps a fresh Ubuntu 24.04 x86 EC2 instance from the pinned application commit. Use a `t3.small`, 20 GiB encrypted gp3 root disk, Standard CPU credits, and an SSH key stored securely on your computer. Allow inbound TCP 80/443 publicly and TCP 22 only from your IP. Check the account's Free plan and remaining credits before launching: running EC2, storage, and public IPv4 consume credits.
+
+The script installs Docker, builds the application, generates a database password on the server, and starts PostgreSQL plus Caddy. The HTTPS hostname is `lootradar.<public-ip-with-hyphens>.sslip.io`. First boot can take several minutes. Verify `/actuator/health` and the catalog before sharing the URL. Deployment logs are in `/var/log/lootradar-deploy.log`; the installation is in `/opt/lootradar`.
+
+Google login remains disabled until its credentials are added to the server's protected `.env` and the HTTPS callback is registered with Google. Restart with `sudo docker compose -f compose.yaml -f compose.aws.yaml up -d` from `/opt/lootradar` after configuration changes. Never put secrets in EC2 user data or Git.
+
+This is a single-server portfolio deployment. Database and TLS volumes survive container restarts, but are not an off-server backup. Back up PostgreSQL before terminating the instance. A stop/start can change its public IP: update `SITE_HOST`, `APP_BASE_URL`, and the Google callback if that happens. Free-plan access ends when credits or the free period expire; do not upgrade automatically.
+
 ## Local development
 
 Requirements: Node.js 22.12+ and JDK 21 or newer. The Maven wrapper downloads Maven automatically.
